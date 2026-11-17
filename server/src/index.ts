@@ -5,14 +5,33 @@ import { Competition } from "./models/Competition";
 
 const app = express();
 
-
-app.get("/api/competitions", async (_req, res) => {
-  const all = await Competition.find();
-  res.json(all);
-});
-
 app.get("/api/health", (_req, res) => {
   res.json({ ok: true, db: mongoose.connection.readyState === 1 });
+});
+
+app.get("/api/competitions", async (req, res) => {
+  const { type, open, sort } = req.query;
+  const filter: Record<string, unknown> = {};
+  if (typeof type === "string") filter.type = type;
+  if (open === "true") {
+    filter.deadline = { $gte: new Date().toISOString().slice(0, 10) };
+  }
+  const order: Record<string, 1 | -1> = sort === "deadline" ? { deadline: 1 } : {};
+  const list = await Competition.find(filter).sort(order);
+  res.json(list);
+});
+
+app.get("/api/competitions/:id", async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.id)) {
+    res.status(404).json({ error: "Competition not found" });
+    return;
+  }
+  const one = await Competition.findById(req.params.id);
+  if (!one) {
+    res.status(404).json({ error: "Competition not found" });
+    return;
+  }
+  res.json(one);
 });
 
 async function start() {
