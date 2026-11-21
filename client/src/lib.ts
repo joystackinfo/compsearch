@@ -14,3 +14,27 @@ export function daysLeft(deadline: string): number {
   const end = new Date(`${deadline}T23:59:59`);
   return Math.ceil((end.getTime() - Date.now()) / 86_400_000);
 }
+
+export type Competition = {
+  _id: string;
+  name: string;
+  organizer: string;
+  type: string;
+  officialUrl: string;
+  deadline?: string;
+  minAge?: number;
+  maxAge?: number;
+  cost?: string;
+  prize?: string;
+  lastChecked: string;
+    deadlineTime?: string;
+  deadlineTimezone?: string;
+  resultDate?: string;
+  ageCountedOn?: string;
+  minGrade?: number;
+  maxGrade?: number;
+  checked?: { dates: boolean; eligibility: boolean; theme: boolean; cost: boolean };
+};
+export const getToken = () => localStorage.getItem("token") ?? "";
+export const setToken = (t: string) => localStorage.setItem("token", t);
+export const clearToken = () => localStorage.removeItem("token");

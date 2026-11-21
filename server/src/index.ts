@@ -30,10 +30,17 @@ app.get("/api/health", (_req, res) => {
   res.json({ ok: true, db: mongoose.connection.readyState === 1 });
 });
 
+const verified: Record<string, boolean> = {
+  "checked.dates": true,
+  "checked.eligibility": true,
+  "checked.theme": true,
+  "checked.cost": true,
+};
+
 // Competition routes
 app.get("/api/competitions", async (req, res) => {
   const { type, open, sort } = req.query;
-  const filter: Record<string, unknown> = {};
+  const filter: Record<string, unknown> = { ...verified };
   if (typeof type === "string") filter.type = type;
   if (open === "true") {
     filter.deadline = { $gte: new Date().toISOString().slice(0, 10) };
@@ -48,7 +55,8 @@ app.get("/api/competitions/:id", async (req, res) => {
     res.status(404).json({ error: "Competition not found" });
     return;
   }
-  const one = await Competition.findById(req.params.id);
+  const filter: Record<string, unknown> = { _id: req.params.id, ...verified };
+  const one = await Competition.findOne(filter);
   if (!one) {
     res.status(404).json({ error: "Competition not found" });
     return;
@@ -85,6 +93,8 @@ function allChecked(c: unknown): boolean {
 
 const today = () => new Date().toISOString().slice(0, 10);
 
+
+// Admin routes
 app.post("/api/admin/competitions", requireAdmin, async (req, res) => {
   if (!allChecked(req.body?.checked)) {
     res.status(400).json({ error: "Tick all four checked boxes before saving" });
@@ -143,6 +153,10 @@ async function start() {
   console.log("Database connected");
   app.listen(5000, () => console.log("Server on http://localhost:5000"));
 }
+app.get("/api/admin/competitions", requireAdmin, async (_req, res) => {
+  const all = await Competition.find().sort({ deadline: 1 });
+  res.json(all);
+});
 
 start().catch((err) => {
   console.error(err);
